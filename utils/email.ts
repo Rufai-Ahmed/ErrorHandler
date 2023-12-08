@@ -17,6 +17,7 @@ const oAuth = new google.auth.OAuth2(
 );
 
 oAuth.setCredentials({ refresh_token: GOOGLE_REFRESH });
+
 export const sendMail = async () => {
   try {
     const accessToken: any = (await oAuth.getAccessToken()).token;
@@ -32,7 +33,7 @@ export const sendMail = async () => {
       },
     });
 
-    const getFile = path.join(__dirname, "../views/index.ejs");
+    const getFile = path.join(__dirname, "../view/index.ejs");
 
     const html = await ejs.renderFile(getFile);
 
