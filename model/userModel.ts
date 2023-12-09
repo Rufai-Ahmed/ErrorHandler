@@ -1,4 +1,4 @@
-import { Document, Schema, model } from "mongoose";
+import { Document, Schema, Types, model } from "mongoose";
 import { iUserData } from "../utils/interfaces";
 
 const userModel = new Schema<iUserData>(
@@ -9,6 +9,7 @@ const userModel = new Schema<iUserData>(
     status: { type: String, default: "school" },
     schoolCode: { type: String, unique: true },
     verify: { type: Boolean, default: false },
+    allPasswords: [{ type: Types.ObjectId, ref: "passwords" }],
   },
   { timestamps: true }
 );

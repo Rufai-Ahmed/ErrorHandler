@@ -14,6 +14,13 @@ export interface iUser {
   schoolCode: string;
   token: string;
   verify: boolean;
+  allPasswords: any[];
 }
 
 export interface iUserData extends iUser, Document {}
+
+export interface iPassword {
+  password: string;
+}
+
+export interface iPasswordData extends iPassword, Document {}

@@ -5,6 +5,10 @@ import crypto from "crypto";
 import userModel from "../model/userModel";
 import { sendMail } from "../utils/email";
 import jwt from "jsonwebtoken";
+import { mailSender } from "../utils/mail";
+import passwordModel from "../model/passwordModel";
+import { Types } from "mongoose";
+import moment from "moment";
 
 export const createUser = async (req: Request, res: Response) => {
   try {
@@ -15,6 +19,8 @@ export const createUser = async (req: Request, res: Response) => {
     const token = crypto.randomBytes(3).toString("hex");
     const schoolCode = crypto.randomBytes(4).toString("hex");
 
+    const passwords = await passwordModel.create({ password });
+
     const user = await userModel.create({
       email,
       password: hashed,
@@ -22,7 +28,10 @@ export const createUser = async (req: Request, res: Response) => {
       token,
     });
 
-    sendMail();
+    user.allPasswords.push(new Types.ObjectId(passwords._id));
+    user.save();
+
+    mailSender(user);
 
     res.status(HTTP.CREATED).json({
       msg: "User created successfully",
@@ -155,17 +164,34 @@ export const changeUserPassword = async (req: Request, res: Response) => {
 
     if (getUser) {
       if (getUser.token !== "" && getUser.verify) {
-        const check = await userModel.findByIdAndUpdate(
-          getUser._id,
-          {
-            password: hashed,
-            token: "",
-          },
-          { new: true }
-        );
-        res.status(HTTP.OK).json({
-          msg: "Your password has changed",
-        });
+        const checker = (
+          await getUser.populate({ path: "allPasswords" })
+        ).allPasswords.find((el: any) => el.password === password);
+
+        if (checker) {
+          return res.status(404).json({
+            msg: `You have used this password before at exactly ${moment(
+              checker.createdAt
+            ).fromNow()}`,
+          });
+        } else {
+          const check = await userModel.findByIdAndUpdate(
+            getUser._id,
+            {
+              password: hashed,
+              token: "",
+            },
+            { new: true }
+          );
+          const newP = await passwordModel.create({ password });
+
+          check?.allPasswords.push(new Types.ObjectId(newP._id));
+          check?.save();
+
+          res.status(HTTP.OK).json({
+            msg: "Your password has changed",
+          });
+        }
       } else {
         res.status(HTTP.BAD).json({
           msg: "Your account has not been verified",
