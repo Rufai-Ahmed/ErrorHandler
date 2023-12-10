@@ -11,6 +11,7 @@ export interface iUser {
   email: string;
   password: string;
   status: string;
+  schoolName: string;
   schoolCode: string;
   token: string;
   verify: boolean;

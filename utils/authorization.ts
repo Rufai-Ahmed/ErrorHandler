@@ -8,7 +8,7 @@ export const authorization = (req: any, res: Response, next: NextFunction) => {
     const value = token?.split(" ")[1];
 
     if (value) {
-      jwt.verify(value, "justsecret", (err: any, data: any) => {
+      jwt.verify(value, "jst", (err: any, data: any) => {
         if (err) {
           return res.status(404).json({
             msg: "Error occured",

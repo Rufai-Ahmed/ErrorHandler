@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { HTTP } from "../utils/enums";
+import { HTTP, SCHOOL } from "../utils/enums";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import userModel from "../model/userModel";
@@ -12,7 +12,7 @@ import moment from "moment";
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, schoolName } = req.body;
     const salt = await bcrypt.genSalt(10);
     const hashed = await bcrypt.hash(password, salt);
 
@@ -25,7 +25,9 @@ export const createUser = async (req: Request, res: Response) => {
       email,
       password: hashed,
       schoolCode,
+      schoolName,
       token,
+      status: SCHOOL.ADMIN,
     });
 
     user.allPasswords.push(new Types.ObjectId(passwords._id));
@@ -76,7 +78,7 @@ export const verifyUser = async (req: Request, res: Response) => {
   }
 };
 
-export const signinUser = async (req: Request, res: Response) => {
+export const signinUser = async (req: any, res: Response) => {
   try {
     const { email, password } = req.body;
 
@@ -92,6 +94,9 @@ export const signinUser = async (req: Request, res: Response) => {
             "justSecret",
             { expiresIn: "2d" }
           );
+
+          req.session.isAuth = true;
+          req.session.data = getUser;
 
           res.status(HTTP.OK).json({
             msg: "User Verified",
@@ -223,10 +228,20 @@ export const getAllUsers = async (req: any, res: Response) => {
         msg: "You don't have access to this data",
       });
     }
+  } catch (error) {
+    console.log(error);
+    return res.status(HTTP.BAD).json({
+      msg: "Error",
+    });
+  }
+};
 
-    return res.status(200).json({
-      msg: "All users",
-      data: users,
+export const logoutUser = async (req: any, res: Response) => {
+  try {
+    req.session.destroy();
+
+    return res.status(HTTP.OK).json({
+      msg: "User has been logged out",
     });
   } catch (error) {
     console.log(error);

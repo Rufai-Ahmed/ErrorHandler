@@ -1,47 +1,53 @@
-import { google } from 'googleapis'
-import nodemailer from 'nodemailer'
-import dotenv from 'dotenv'
-import ejs from 'ejs'
-dotenv.config()
+import { google } from "googleapis";
+import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+import ejs from "ejs";
+import path from "path";
+dotenv.config();
 
 const auth = new google.auth.OAuth2(
-    process.env.GOOGLE_ID,
-    process.env.GOOGLE_SECRET,
-    process.env.GOOGLE_REDIRECT,
-)
+  process.env.GOOGLE_ID!,
+  process.env.GOOGLE_SECRET!,
+  process.env.GOOGLE_REDIRECT!
+);
 
-auth.setCredentials({refresh_token: process.env.GOOGLE_REFRESH})
+auth.setCredentials({ refresh_token: process.env.GOOGLE_REFRESH });
 
 export const mailSender = async (user: any) => {
-    try {
+  try {
+    const accessToken: any = (await auth.getAccessToken()).token;
 
-        const accessToken: any = (await auth.getAccessToken()).token
-        
-        const transport = nodemailer.createTransport({
-            service: "gmail",
-            auth: {
-                user: "abbeyrufai234@gmail.com",
-                type: "OAuth2",
-                clientId: process.env.GOOGLE_ID,
-                clientSecret: process.env.GOOGLE_SECRET,
-                refreshToken: process.env.GOOGLE_REFRESH,
-                accessToken,
-            }
-        })
+    const transport = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: "abbeyrufai234@gmail.com",
+        type: "OAuth2",
+        clientId: process.env.GOOGLE_ID,
+        clientSecret: process.env.GOOGLE_SECRET,
+        refreshToken: process.env.GOOGLE_REFRESH,
+        accessToken,
+      },
+    });
 
-        const html = await ejs.renderFile("../view/index.ejs")
+    const data = {
+      token: user.token,
+      email: user.email,
+      url: `http://localhost:5173/verify/${user._id}`,
+    };
 
-        const mailerOption = {
-            from : "abbeyrufai234@gmail.com",
-            to: user.email,
-            subject: "Account Verification",
-            html
-        }
+    const getPath = path.join(__dirname, "../views/index.ejs");
 
-        await transport.sendMail(mailerOption)
+    const html = await ejs.renderFile(getPath, { data });
 
-    } catch (error) {
-        console.log(error);
-        
-    }
-}
+    const mailerOption = {
+      from: "abbeyrufai234@gmail.com",
+      to: user.email,
+      subject: "Account Verification",
+      html,
+    };
+
+    await transport.sendMail(mailerOption);
+  } catch (error) {
+    console.log(error);
+  }
+};
